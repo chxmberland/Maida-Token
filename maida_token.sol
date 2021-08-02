@@ -3,16 +3,16 @@ pragma solidity ^0.8.6;
 
 contract Maida {
 
-    string public tokenName = "Maida";
-    string public tokenSymbol = "MDA";
-    address private tokenFounder;   //Address of the founder
+    string      public tokenName = "Maida";
+    string      public tokenSymbol = "MDA";
+    address     private tokenFounder;   //Address of the founder
 
-    uint8 private tokenDecimals = 18;                       //The number of decimals that are displayed for fractional transactions
-    uint256 private tokenSupply;                            //The total number of tokens in circulation
-    uint256 private constant MAX_DENOMINATION = 2**256 - 1; //Maximum denomination allowed in an account
+    uint8       private tokenDecimals = 18;                       //The number of decimals that are displayed for fractional transactions
+    uint256     private tokenSupply;                            //The total number of tokens in circulation
+    uint256     private constant MAX_DENOMINATION = 2**256 - 1; //Maximum denomination allowed in an account
  
-    mapping (address => uint256) private _balances;                         //Mapping accounts to balances
-    mapping (address => mapping (address => uint256)) private _allowed;  //Mapping accounts to their allowed spend to other accounts
+    mapping     (address => uint256) private _balances;                         //Mapping accounts to balances
+    mapping     (address => mapping (address => uint256)) private _allowed;  //Mapping accounts to their allowed spend to other accounts
 
     //This is the constructor, which will be initialized once by the creator of the coin
     constructor(uint256 _initialAmount, uint8 _decimals) {
@@ -26,26 +26,18 @@ contract Maida {
 
     }
 
-    /// @return tokenDecimals The number of decimals used in fractional transactions
     function decimals() external view returns (uint8) {
         return tokenDecimals;
     }
 
-    /// @return totalSupply The total amount of Maida in circulations
     function totalSupply() external view returns (uint256) {
         return tokenSupply;
     }
 
-    /// @param _owner The address whose balance is checked
-    /// @return balance The balance of _owner
     function balanceOf(address _owner) external view returns (uint256 balance) {
         return _balances[_owner];
     }
 
-    /// @notice Transfer '_value' from 'msg.sender' to '_to', and emits a transfer event
-    /// @param _to The ethereum adress where the money is sent
-    /// @param _value The number of tokens being sent
-    /// @return success Boolean which indicates that the transaction has gone through
     function transfer(address _to, uint256 _value) external returns (bool success) {
 
         require(_balances[msg.sender] >= _value, 
@@ -63,11 +55,6 @@ contract Maida {
 
     }
 
-    /// @notice Sends '_value' to '_to' from '_from' on the condition the transaction is approved by '_from'. Someone else spending on your behalf.
-    /// @param _from The address that is sending the tokens
-    /// @param _to The address that is recieving the tokens
-    /// @param _value The number of tokens being sent from '_from' to '_to'
-    /// @return success A boolean which indicates wether or not the transaction was successful
     function transferFrom(address _from, address _to, uint256 _value) external returns (bool success) {
 
         /*
@@ -99,10 +86,6 @@ contract Maida {
 
     }
 
-    /// @notice Approves a transaction based on the condition that 'msg.sender' is allowed to send '_value' to '_reciever'
-    /// @param _spender The address that tokens are being sent to
-    /// @param _value The number of tokens being sent to '_reciever'
-    /// @return success A boolean which indicates wether the transaction should be approved
     function approve(address _spender, uint256 _value) external returns (bool success) {
 
         _allowed[msg.sender][_spender] = _value; 
@@ -118,10 +101,7 @@ contract Maida {
         return true;
 
     }
-
-    /// @param _owner The address sending tokens
-    /// @param _spender The address recieving tokens
-    /// @return remaining An unsigned intiger represneing the remaining allowance '_owner' can send to '_reciever'
+    
     function allowance(address _owner, address _spender) external view returns (uint256 remaining) {
         return _allowed[_owner][_spender];
     }
