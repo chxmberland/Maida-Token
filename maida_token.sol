@@ -9,7 +9,7 @@ interface Token {
     /// @return name The name of the token
     function name() public view returns (string name);
 
-    /// @return symbole The three letter symbol of the token
+    /// @return symbol The three letter symbol of the token
     function symbol() public view returns (string symbol);
 
     /// @return decimals The maximum number of decimals  that can be used in a fractional transaction
@@ -112,55 +112,131 @@ contract Standard_Token is Token { //This is an example implementation of the To
 
 contract Maida is Token {
 
-    string private tokenName = "Maida";
-    string private tokenSymbol = "MDA";
+    string public tokenName = "Maida";
+    string public tokenSymbol = "MDA";
+    address private tokenFounder;   //Address of the founder
 
-    uint8 private decimals = 18;
-    uint256 private totalSupply;
+    uint8 private tokenDecimals = 18;                       //The number of decimals that are displayed for fractional transactions
+    uint256 private tokenSupply;                            //The total number of tokens in circulation
+    uint256 private constant MAX_DENOMINATION = 2**256 - 1; //Maximum denomination allowed in an account
+ 
+    mapping (address => uint256) private _balances;                         //Mapping accounts to balances
+    mapping (address => mapping (address => uint256)) private _allowed;  //Mapping accounts to their allowed spend to other accounts
 
-    function name() public view returns (string) {
+    //This is the constructor, which will be initialized once by the creator of the coin
+    constructor(uint256 _initialAmount, uint8 _decimals) {
+
+        tokenFounder = msg.sender;
+
+        tokenDecimals = _decimals;
+        tokenSupply = _initialAmount; //Setting the total token supply equal to the initial amount
+        _balances[msg.sender] = _initialAmount; //Sending the intial amount of currency to the creator
+
 
     }
 
-    function symbol() public view returns (string) {
+    /// @return tokenDecimals The number of decimals used in fractional transactions
+    function decimals() external view returns (uint8) {
+        return tokenDecimals;
+    }
+
+    /// @return totalSupply The total amount of Maida in circulations
+    function totalSupply() external view returns (uint256) {
+        return totalSupply;
+    }
+
+    /// @param _owner The address whose balance is checked
+    /// @return balance The balance of _owner
+    function balanceOf(address _owner) external view returns (uint256 balance) {
+        return _balances[msg.sender];
+    }
+
+    /// @notice Transfer '_value' from 'msg.sender' to '_to', and emits a transfer event
+    /// @param _to The ethereum adress where the money is sent
+    /// @param _value The number of tokens being sent
+    /// @return sucsess Boolean which indicates that the transaction has gone through
+    function transfer(address _to, uint256 _value) external returns (bool success) {
+
+        require(_balances(msg.sender) >= _value, 
+                "The account from which you are sending currency dosen't have enough funds to cover the transaction.");
+
+        require(_value > 0,
+                "Transaction amounts must be greater than zero.");
+
+        _balances[_to] += _value;
+        _balances[msg.sender] -= _value;
+
+        emit Transfer(msg.sender, _to, _value);
+
+        return true;
 
     }
 
-    function decimals() public view returns (uint8) {
+    /// @notice Sends '_value' to '_to' from '_from' on the condition the transaction is approved by '_from'. Someone else spending on your behalf.
+    /// @param _from The address that is sending the tokens
+    /// @param _to The address that is recieving the tokens
+    /// @param _value The number of tokens being sent from '_from' to '_to'
+    /// @return success A boolean which indicates wether or not the transaction was successful
+    function transferFrom(address _from, address _to, uint256 _value) external returns (bool success) {
+
+        /*
+        NOTE:
+        Before this function is excecuted, the allowance function as well as the approval function must be executed.
+        The allowance function will create an allowance that is equal to the value so that the transfer will go through,
+        then the approval function will create an event and approve the function.
+        */
+
+        require(_balances[_from] >= _value, 
+                "The account from which you are sending currency dosen't have enough funds to cover the transaction.");
+
+        require(_value <= _allowed[_from][msg.sender],
+                "The value you are trying to send exceeds senders allowance.");
+
+        require(_value >= 0, 
+                "You cannot create a transaction for negative amounts.");
+
+        _balances[_to] += _value;
+        _balances[_from] -= _value;
+
+        if (_allowed[_from][msg.sender] < uint(-1)) {
+            _allowed[_from][msg.sender] -= _value; //Now that the transaction has gone through, the allowance is reset.
+        }
+
+        emit Transfer(_from, _to, _value);
+
+        return true;
 
     }
 
-    function totalSupply() public view returns (uint256) {
+    /// @notice Approves a transaction based on the condition that 'msg.sender' is allowed to send '_value' to '_reciever'
+    /// @param _spender The address that tokens are being sent to
+    /// @param _value The number of tokens being sent to '_reciever'
+    /// @return success A boolean which indicates wether the transaction should be approved
+    function approve(address _spender, uint256 _value) external returns (bool success) {
+
+        _allowed[msg.sender][_spender] = _value; 
+        /*
+        NOTE:
+        The allowances array functions as a record of transactions.
+        _spender will now be allowed to spend _value tokens because they have been sent that many tokens.
+        This function is executed BEFORE the transfer function. This itself dosent approve the function, but
+        creates the necessary conditions for approval (the allowance is created), so that when the allowance is
+        checked in the transfer function, it will go through.
+        */
+        emit Approval(msg.sender, _spender, _value);
+        return true;
 
     }
 
-    function balanceOf(address _owner) public view returns (uint256 balance) {
-
-    }
-
-    function transfer(address _to, uint256 _value) public returns (bool success) {
-
-    }
-
-    function transferFrom(address _from, address _to, uint256 _value) public returns (bool success) {
-
-    }
-
-    function approve(address _spender, uint256 _value) public returns (bool success) {
-
-    }
-
-    function allowance(address _owner, address _spender) public view returns (uint256 remaining) {
-
+    /// @param _owner The address sending tokens
+    /// @param _spender The address recieving tokens
+    /// @return remaining An unsigned intiger represneing the remaining allowance '_owner' can send to '_reciever'
+    function allowance(address _owner, address _spender) external view returns (uint256 remaining) {
+        return _allowed[_owner][_spender];
     }
 
 
-    event Transfer(address indexed _from, address indexed _to, uint256 _value) {
-
-    }
-
-    event Approval(address indexed _owner, address indexed _spender, uint256 _value) {
-
-    }
+    event Transfer(address indexed _from, address indexed _to, uint256 _value);
+    event Approval(address indexed _owner, address indexed _receiver, uint256 _value);
 
 }
