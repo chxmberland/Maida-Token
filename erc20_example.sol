@@ -7,16 +7,16 @@ interface Token {
     //The following methods are optional
 
     /// @return name The name of the token
-    function name() public view returns (string name);
+    function name() external view returns (string memory name);
 
     /// @return symbol The three letter symbol of the token
-    function symbol() public view returns (string symbol);
+    function symbol() external view returns (string memory symbol);
 
     /// @return decimals The maximum number of decimals  that can be used in a fractional transaction
-    function decimals() public view returns (uint8 decimals);
+    function decimals() external view returns (uint8 decimals);
 
     /// @return totalSupply The total number of tokens circulating
-    function totalSupply() public view returns (uint256 totalSupply);
+    function totalSupply() external view returns (uint256 totalSupply);
 
     //The following methods AND events are required
 
@@ -56,16 +56,16 @@ contract Standard_Token is Token { //This is an example implementation of the To
     uint256 constant private MAX_UINT256 = 2**256 - 1;
     mapping (address => uint256) public balances;
     mapping (address => mapping (address => uint256)) public allowed;
-    uint256 public totalSupply;
+    uint256 public override totalSupply;
     /*
     NOTE:
     The following variables are OPTIONAL vanities. One does not have to include them.
     They allow one to customise the token contract & in no way influences the core functionality.
     Some wallets/interfaces might not even bother to look at this information.
     */
-    string public name;                   //fancy name: eg Simon Bucks
-    uint8 public decimals;                //How many decimals to show.
-    string public symbol;                 //An identifier: eg SBX
+    string public override name;                   //fancy name: eg Simon Bucks
+    uint8 public override decimals;                //How many decimals to show.
+    string public override symbol;                 //An identifier: eg SBX
 
     constructor(uint256 _initialAmount, string memory _tokenName, uint8 _decimalUnits, string  memory _tokenSymbol) {
         balances[msg.sender] = _initialAmount;               // Give the creator all initial tokens
@@ -84,11 +84,11 @@ contract Standard_Token is Token { //This is an example implementation of the To
     }
 
     function transferFrom(address _from, address _to, uint256 _value) public override returns (bool success) {
-        uint256 allowance = allowed[_from][msg.sender];
-        require(balances[_from] >= _value && allowance >= _value, "token balance or allowance is lower than amount requested");
+        uint256 allowanceFor = allowed[_from][msg.sender];
+        require(balances[_from] >= _value && allowanceFor >= _value, "token balance or allowance is lower than amount requested");
         balances[_to] += _value;
         balances[_from] -= _value;
-        if (allowance < MAX_UINT256) {
+        if (allowanceFor < MAX_UINT256) {
             allowed[_from][msg.sender] -= _value;
         }
         emit Transfer(_from, _to, _value); //solhint-disable-line indent, no-unused-vars
