@@ -9,8 +9,8 @@ contract Maida {
     uint8 private       tokenDecimals = 18;
     uint256 private     tokenSupply;
  
-    mapping (address => uint256) private                        _balances;
-    mapping (address => mapping (address => uint256)) private   _allowed;
+    mapping (address => uint256) private                        balances;
+    mapping (address => mapping (address => uint256)) private   allowed;
 
     constructor(uint256 _initialAmount, uint8 _decimals) {
 
@@ -18,7 +18,7 @@ contract Maida {
 
         tokenDecimals = _decimals;
         tokenSupply = _initialAmount; 
-        _balances[msg.sender] = _initialAmount;
+        balances[msg.sender] = _initialAmount;
 
 
     }
@@ -32,19 +32,19 @@ contract Maida {
     }
 
     function balanceOf(address _owner) external view returns (uint256 balance) {
-        return _balances[_owner];
+        return balances[_owner];
     }
 
     function transfer(address _to, uint256 _value) external returns (bool success) {
 
-        require(_balances[msg.sender] >= _value, 
+        require(balances[msg.sender] >= _value, 
                 "The account from which you are sending currency dosen't have enough funds to cover the transaction.");
 
         require(_value > 0,
                 "Transaction amounts must be greater than zero.");
 
-        _balances[_to] += _value;
-        _balances[msg.sender] -= _value;
+        balances[_to] += _value;
+        balances[msg.sender] -= _value;
 
         emit Transfer(msg.sender, _to, _value);
 
@@ -61,20 +61,20 @@ contract Maida {
         then the approval function will create an event and approve the function.
         */
 
-        require(_balances[_from] >= _value, 
+        require(balances[_from] >= _value, 
                 "The account from which you are sending currency dosen't have enough funds to cover the transaction.");
 
-        require(_value <= _allowed[_from][msg.sender],
+        require(_value <= allowed[_from][msg.sender],
                 "The value you are trying to send exceeds senders allowance.");
 
         require(_value >= 0, 
                 "You cannot create a transaction for negative amounts.");
 
-        _balances[_to] += _value;
-        _balances[_from] -= _value;
+        balances[_to] += _value;
+        balances[_from] -= _value;
 
-        if (_allowed[_from][msg.sender] < (2 ** 256 - 1)) {
-            _allowed[_from][msg.sender] -= _value; //Now that the transaction has gone through, the allowance is reset.
+        if (allowed[_from][msg.sender] < (2 ** 256 - 1)) {
+            allowed[_from][msg.sender] -= _value; //Now that the transaction has gone through, the allowance is reset.
         }
 
         emit Transfer(_from, _to, _value);
@@ -85,7 +85,7 @@ contract Maida {
 
     function approve(address _spender, uint256 _value) external returns (bool success) {
 
-        _allowed[msg.sender][_spender] = _value; 
+        allowed[msg.sender][_spender] = _value; 
         /*
         NOTE:
         The allowances array functions as a record of transactions.
@@ -100,7 +100,7 @@ contract Maida {
     }
 
     function allowance(address _owner, address _spender) external view returns (uint256 remaining) {
-        return _allowed[_owner][_spender];
+        return allowed[_owner][_spender];
     }
 
     event Transfer(address indexed _from, address indexed _to, uint256 _value);
