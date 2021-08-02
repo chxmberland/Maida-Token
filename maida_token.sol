@@ -3,25 +3,22 @@ pragma solidity ^0.8.6;
 
 contract Maida {
 
-    string      public tokenName = "Maida";
-    string      public tokenSymbol = "MDA";
-    address     private tokenFounder;   //Address of the founder
-
-    uint8       private tokenDecimals = 18;                       //The number of decimals that are displayed for fractional transactions
-    uint256     private tokenSupply;                            //The total number of tokens in circulation
-    uint256     private constant MAX_DENOMINATION = 2**256 - 1; //Maximum denomination allowed in an account
+    string public       tokenName = "Maida";
+    string public       tokenSymbol = "MDA";
+    address private     tokenFounder; 
+    uint8 private       tokenDecimals = 18;
+    uint256 private     tokenSupply;
  
-    mapping     (address => uint256) private _balances;                         //Mapping accounts to balances
-    mapping     (address => mapping (address => uint256)) private _allowed;  //Mapping accounts to their allowed spend to other accounts
+    mapping (address => uint256) private                        _balances;
+    mapping (address => mapping (address => uint256)) private   _allowed;
 
-    //This is the constructor, which will be initialized once by the creator of the coin
     constructor(uint256 _initialAmount, uint8 _decimals) {
 
         tokenFounder = msg.sender;
 
         tokenDecimals = _decimals;
-        tokenSupply = _initialAmount; //Setting the total token supply equal to the initial amount
-        _balances[msg.sender] = _initialAmount; //Sending the intial amount of currency to the creator
+        tokenSupply = _initialAmount; 
+        _balances[msg.sender] = _initialAmount;
 
 
     }
@@ -101,11 +98,10 @@ contract Maida {
         return true;
 
     }
-    
+
     function allowance(address _owner, address _spender) external view returns (uint256 remaining) {
         return _allowed[_owner][_spender];
     }
-
 
     event Transfer(address indexed _from, address indexed _to, uint256 _value);
     event Approval(address indexed _owner, address indexed _receiver, uint256 _value);
