@@ -3,32 +3,28 @@ pragma solidity ^0.8.6;
 
 contract Maida {
 
-    string public       tokenName = "Maida";
-    string public       tokenSymbol = "MDA";
+    string public       tokenName;
+    string public       tokenSymbol;
     address private     tokenFounder; 
-    uint8 private       tokenDecimals = 18;
+    uint8 private       tokenDecimals;
     uint256 private     tokenSupply;
  
     mapping (address => uint256) private                        balances;
     mapping (address => mapping (address => uint256)) private   allowed;
 
-    constructor(uint256 _initialAmount, uint8 _decimals) {
+    constructor() {
 
-        tokenFounder = msg.sender;
+        tokenName = "Maida";
+        tokenSymbol = "MDA";
+        tokenFounder = 0x51c3956F11A50F11288c186643eE1268716Cd89F;
+        tokenDecimals = 18;
+        balances[0x51c3956F11A50F11288c186643eE1268716Cd89F] = 21000000;
+        emit Transfer(address(0), 0x5A86f0cafD4ef3ba4f0344C138afcC84bd1ED222, tokenSupply);
 
-        tokenDecimals = _decimals;
-        tokenSupply = _initialAmount; 
-        balances[msg.sender] = _initialAmount;
-
-
-    }
-
-    function decimals() external view returns (uint8) {
-        return tokenDecimals;
     }
 
     function totalSupply() external view returns (uint256) {
-        return tokenSupply;
+        return tokenSupply - balances[address(0)];
     }
 
     function balanceOf(address _owner) external view returns (uint256 balance) {
@@ -86,6 +82,7 @@ contract Maida {
     function approve(address _spender, uint256 _value) external returns (bool success) {
 
         allowed[msg.sender][_spender] = _value; 
+
         /*
         NOTE:
         The allowances array functions as a record of transactions.
@@ -94,6 +91,7 @@ contract Maida {
         creates the necessary conditions for approval (the allowance is created), so that when the allowance is
         checked in the transfer function, it will go through.
         */
+
         emit Approval(msg.sender, _spender, _value);
         return true;
 
@@ -105,5 +103,10 @@ contract Maida {
 
     event Transfer(address indexed _from, address indexed _to, uint256 _value);
     event Approval(address indexed _owner, address indexed _receiver, uint256 _value);
+
+    /*
+    NOTE:
+    Any function past this point is beyond the recommended ERC20 standard.
+    */
 
 }
