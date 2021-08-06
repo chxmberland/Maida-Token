@@ -5,9 +5,11 @@ contract Maida {
 
     string public       tokenName;
     string public       tokenSymbol;
-    address private     tokenFounder; 
     uint8 private       tokenDecimals;
     uint256 private     tokenSupply;
+
+    address private     tokenFounder; 
+    address[] private   minters;
  
     mapping (address => uint256) private                        balances;
     mapping (address => mapping (address => uint256)) private   allowed;
@@ -16,7 +18,7 @@ contract Maida {
 
         tokenName = "Maida";
         tokenSymbol = "MDA";
-        tokenFounder = 0x51c3956F11A50F11288c186643eE1268716Cd89F;
+        tokenFounder = msg.sender;
         tokenDecimals = 18;
         balances[0x51c3956F11A50F11288c186643eE1268716Cd89F] = 21000000;
         emit Transfer(address(0), 0x5A86f0cafD4ef3ba4f0344C138afcC84bd1ED222, tokenSupply);
@@ -108,5 +110,44 @@ contract Maida {
     NOTE:
     Any function past this point is beyond the recommended ERC20 standard.
     */
+
+    function addMinter(address toAdd) external returns (bool) {
+        if (msg.sender == tokenFounder) {
+            minters.push(toAdd);
+            return true;
+        }
+        return false;
+    }
+
+    function removeMinter(address toRemove) external returns (bool) {
+        address[] memory newMinters;
+        uint j = 0;
+        for (uint i = 0; i < minters.length; i++) {
+            if (minters[i] != toRemove) {
+                newMinters[j];
+                j += 1;
+
+            }
+        }
+        minters = newMinters;
+        return true;
+    }
+
+    function mint(address destination, uint256 value) external returns (bool) {
+        bool check = false;
+
+        for (uint i = 0; i < minters.length; i++) {
+            if (minters[i] == msg.sender) {
+                check = true;
+            }
+        }
+
+        if (check) {
+            balances[destination] += value;
+            return true;
+        }
+
+        return false;
+    }
 
 }
