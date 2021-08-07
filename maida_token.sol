@@ -1,10 +1,24 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.6;
+pragma solidity ^0.8.4;
+
+library SafeMath { // Only relevant functions
+    function sub(uint256 a, uint256 b) internal pure returns (uint256) {
+        assert(b <= a);
+        return a - b;
+    }
+    function add(uint256 a, uint256 b) internal pure returns (uint256)   {
+        uint256 c = a + b;
+        assert(c >= a);
+        return c;
+    }
+}
 
 contract Maida {
 
-    string public       tokenName;
-    string public       tokenSymbol;
+    using SafeMath for uint;
+
+    string private      tokenName;
+    string private      tokenSymbol;
     uint8 private       tokenDecimals;
     uint256 private     tokenSupply;
 
@@ -20,29 +34,29 @@ contract Maida {
         tokenSymbol = "MDA";
         tokenFounder = msg.sender;
         tokenDecimals = 18;
-        balances[0x51c3956F11A50F11288c186643eE1268716Cd89F] = 21000000;
-        emit Transfer(address(0), 0x5A86f0cafD4ef3ba4f0344C138afcC84bd1ED222, tokenSupply);
+        balances[msg.sender] = 21000000;
+        emit Transfer(address(0), msg.sender, tokenSupply);
 
     }
 
-    function totalSupply() external view returns (uint256) {
-        return tokenSupply - balances[address(0)];
+    function totalSupply() public view returns (uint256) {
+        return tokenSupply;
     }
 
-    function balanceOf(address _owner) external view returns (uint256 balance) {
+    function balanceOf(address _owner) public view returns (uint) {
         return balances[_owner];
     }
+    
+    function allowance(address _owner, address _spender) public view returns (uint) {
+        return allowed[_owner][_spender];
+    }
 
-    function transfer(address _to, uint256 _value) external returns (bool success) {
+    function transfer(address _to, uint256 _value) public returns (bool success) {
 
-        require(balances[msg.sender] >= _value, 
-                "The account from which you are sending currency dosen't have enough funds to cover the transaction.");
+        require(balances[msg.sender] >= _value, "The account from which you are sending currency dosen't have enough funds to cover the transaction.");
 
-        require(_value > 0,
-                "Transaction amounts must be greater than zero.");
-
-        balances[_to] += _value;
-        balances[msg.sender] -= _value;
+        balances[_to] = balances[_to].add(_value);
+        balances[msg.sender] = balances[msg.sender].sub(_value);
 
         emit Transfer(msg.sender, _to, _value);
 
@@ -50,7 +64,7 @@ contract Maida {
 
     }
 
-    function transferFrom(address _from, address _to, uint256 _value) external returns (bool success) {
+    function transferFrom(address _from, address _to, uint256 _value) public returns (bool success) {
 
         /*
         NOTE:
@@ -59,21 +73,14 @@ contract Maida {
         then the approval function will create an event and approve the function.
         */
 
-        require(balances[_from] >= _value, 
-                "The account from which you are sending currency dosen't have enough funds to cover the transaction.");
+        require(_value <= balances[_from], "The account from which you are sending currency dosen't have enough funds to cover the transaction.");
 
-        require(_value <= allowed[_from][msg.sender],
-                "The value you are trying to send exceeds senders allowance.");
+        require(_value <= allowed[_from][msg.sender], "The value you are trying to send exceeds senders allowance.");
 
-        require(_value >= 0, 
-                "You cannot create a transaction for negative amounts.");
+        balances[_to] = balances[_to].add(_value);
+        balances[_from] = balances[_from].sub(_value);
 
-        balances[_to] += _value;
-        balances[_from] -= _value;
-
-        if (allowed[_from][msg.sender] < (2 ** 256 - 1)) {
-            allowed[_from][msg.sender] -= _value; //Now that the transaction has gone through, the allowance is reset.
-        }
+        allowed[_from][msg.sender].sub(_value); //Now that the transaction has gone through, the allowance is reset.
 
         emit Transfer(_from, _to, _value);
 
@@ -81,7 +88,7 @@ contract Maida {
 
     }
 
-    function approve(address _spender, uint256 _value) external returns (bool success) {
+    function approve(address _spender, uint256 _value) public returns (bool success) {
 
         allowed[msg.sender][_spender] = _value; 
 
@@ -99,10 +106,6 @@ contract Maida {
 
     }
 
-    function allowance(address _owner, address _spender) external view returns (uint256 remaining) {
-        return allowed[_owner][_spender];
-    }
-
     event Transfer(address indexed _from, address indexed _to, uint256 _value);
     event Approval(address indexed _owner, address indexed _receiver, uint256 _value);
 
@@ -110,8 +113,8 @@ contract Maida {
     NOTE:
     Any function past this point is beyond the recommended ERC20 standard.
     */
-
-    function addMinter(address toAdd) external returns (bool) {
+    
+    function addMinter(address toAdd) public returns (bool) {
         if (msg.sender == tokenFounder) {
             minters.push(toAdd);
             return true;
@@ -119,7 +122,7 @@ contract Maida {
         return false;
     }
 
-    function removeMinter(address toRemove) external returns (bool) {
+    function removeMinter(address toRemove) public returns (bool) {
         address[] memory newMinters;
         uint j = 0;
         for (uint i = 0; i < minters.length; i++) {
@@ -133,7 +136,7 @@ contract Maida {
         return true;
     }
 
-    function mint(address destination, uint256 value) external returns (bool) {
+    function mint(address destination, uint256 value) public returns (bool) {
         bool check = false;
 
         for (uint i = 0; i < minters.length; i++) {
@@ -146,6 +149,8 @@ contract Maida {
             balances[destination] += value;
             return true;
         }
+
+        emit Transfer(address(0), destination, value);
 
         return false;
     }
