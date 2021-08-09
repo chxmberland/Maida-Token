@@ -115,6 +115,12 @@ contract Maida {
     */
     
     function addMinter(address toAdd) public returns (bool) {
+
+        /*
+        NOTE:
+        A minter is someone who is able to create new coins.
+        */
+
         if (msg.sender == tokenFounder) {
             minters.push(toAdd);
             return true;
